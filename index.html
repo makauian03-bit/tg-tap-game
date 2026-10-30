@@ -187,7 +187,6 @@
         tapButton.addEventListener('click', incrementScore);
         buyUpgradeBtn.addEventListener('click', buyUpgrade);
 
-        // Passive income loop (runs every second if user has auto-tapper)
         setInterval(async () => {
             if (autoTapperLevel > 0) {
                 try {
