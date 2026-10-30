@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Tap Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        #score {
+            font-size: 4rem;
+            color: #38bdf8;
+            margin: 20px 0;
+        }
+        #tap-button {
+            background-color: #38bdf8;
+            color: #0f172a;
+            border: none;
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+            transition: transform 0.1s ease;
+        }
+        #tap-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tap Game</h1>
+        <p id="user-greeting">Loading user...</p>
+        <div id="score">0</div>
+        <button id="tap-button">TAP!</button>
+    </div>
+
+    <script>
+        // Automatically switch between localhost and your live Render URL
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://tg-tap-game.onrender.com';
+
+        let score = 0;
+        let telegramId = 'test_user_123'; // Default fallback for browser testing
+
+        // Initialize Telegram Web App if opened inside Telegram
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            tg.expand();
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                const user = tg.initDataUnsafe.user;
+                telegramId = user.id.toString();
+                document.getElementById('user-greeting').innerText = `Hello, ${user.first_name || 'Player'}!`;
+            } else {
+                document.getElementById('user-greeting').innerText = 'Hello, Player!';
+            }
+        }
+
+        const scoreDisplay = document.getElementById('score');
+        const tapButton = document.getElementById('tap-button');
+
+        // Fetch initial score from backend server
+        async function fetchScore() {
+            try {
+                const response = await fetch(`${API_URL}/api/score/${telegramId}`);
+                const data = await response.json();
+                score = data.score || 0;
+                scoreDisplay.innerText = score;
+            } catch (error) {
+                console.error('Error fetching score:', error);
+            }
+        }
+
+        // Send tap increment to backend server
+        async function incrementScore() {
+            try {
+                const response = await fetch(`${API_URL}/api/tap`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ telegramId: telegramId })
+                });
+                const data = await response.json();
+                score = data.score;
+                scoreDisplay.innerText = score;
+            } catch (error) {
+                console.error('Error updating score:', error);
+            }
+        }
+
+        tapButton.addEventListener('click', incrementScore);
+
+        // Load score on startup
+        fetchScore();
+    </script>
+</body>
+</html>
